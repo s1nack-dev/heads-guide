@@ -7,10 +7,34 @@ Download the top and bottom rom files from this commit https://app.circleci.com/
 grab the sha-sums from the Make Board check and compare them with what was downloaded
 
 
-## Build
 
 `git clone https://github.com/osresearch/heads`
+`cd heads`
 `git switch -c 96440b928acb06de5b925ea12014c9c280b23165`
+
+## Building the firmware
+
+
+`docker run -it --entrypoint /bin/bash debian:11`
+
+
+```
+apt update
+
+apt install -y build-essential zlib1g-dev uuid-dev libdigest-sha-perl libelf-dev bc bzip2 bison flex git gnupg gawk iasl m4 nasm patch python python2 python3 wget gnat cpio ccache pkg-config cmake libusb-1.0-0-dev autoconf texinfo ncurses-dev doxygen graphviz udev libudev1 libudev-dev automake libtool rsync innoextract sudo libssl-dev device-tree-compiler u-boot-tools sharutils e2fsprogs parted curl unzip
+
+
+#!/bin/bash -eo pipefail
+mkdir ./tmpDir
+find ./Makefile ./patches/ ./modules/ -type f | sort -h |xargs sha256sum > ./tmpDir/all_modules_and_patches.sha256sums
+find ./Makefile ./modules/coreboot ./modules/musl-cross* ./patches/coreboot* -type f | sort -h | xargs sha256sum > ./tmpDir/coreboot_musl-cross.sha256sums
+find ./Makefile modules/musl-cross* -type f | sort -h | xargs sha256sum > ./tmpDir/musl-cross.sha256sums
+./blobs/xx20/download_parse_me.sh
+./blobs/xx30/download_clean_me.sh -m $(readlink -f ./blobs/xx30/me_cleaner.py)
+./blobs/xx30/vbios_t530.sh
+./blobs/xx30/vbios_w530.sh
+rm -rf build/x86/x230-hotp-maximized/* build/x86/log/* && make V=1 BOARD=x230-hotp-maximized  || touch ./tmpDir/failed_build
+```
 
 
 
