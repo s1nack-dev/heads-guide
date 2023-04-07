@@ -1,49 +1,59 @@
-https://www.rototron.info/recover-bricked-bios-using-flashrom-on-a-raspberry-pi/
 
-https://libreboot.org/docs/install/spi.html#reading
+## Obtaining the Firmware
 
-Download the top and bottom rom files from this commit https://app.circleci.com/pipelines/github/osresearch/heads/524/workflows/d13d6a02-1ffa-40ac-b721-e31ff69483d4/jobs/7458
+The Heads team recommends not downloading from the latest commit, so let's head to the commits section of their github repo at https://github.com/osresearch/heads/commits/master - It's fairly safe to aim for a commit that was two weeks prior to today's date. Make sure the commit was "Verified" and that the Github Checkrun's passed(look for the green check mark, not the red X)
+![commits](assets/images/commits.png)
 
-grab the sha-sums from the Make Board check and compare them with what was downloaded
+If you want to compile the firmware yourself, save the Git commit shasum and
+proceed to the [Building Heads Firmware](#building-heads-firmware) section.
 
+If you want to download pre-compiled firmware, go to the [Download Pre-Compiled Firmware](#download-pre-compiled-firmware)
 
+### Building Heads Firmware
 
-`git clone https://github.com/osresearch/heads`
-`cd heads`
-`git switch -c 96440b928acb06de5b925ea12014c9c280b23165`
-
-## Building the firmware
-
+Start a docker container:
 
 `docker run -it --entrypoint /bin/bash debian:11`
 
+Now you should be inside the docker container
 
-```
+```bash
+
 apt update
 
 apt install -y build-essential zlib1g-dev uuid-dev libdigest-sha-perl libelf-dev bc bzip2 bison flex git gnupg gawk iasl m4 nasm patch python python2 python3 wget gnat cpio ccache pkg-config cmake libusb-1.0-0-dev autoconf texinfo ncurses-dev doxygen graphviz udev libudev1 libudev-dev automake libtool rsync innoextract sudo libssl-dev device-tree-compiler u-boot-tools sharutils e2fsprogs parted curl unzip
 
+git clone https://github.com/osresearch/heads
+cd heads
 
-#!/bin/bash -eo pipefail
+# Replace the hash with the hash of the Git commit you want to use
+git switch -c 96440b928acb06de5b925ea12014c9c280b23165
+
 mkdir ./tmpDir
+
 find ./Makefile ./patches/ ./modules/ -type f | sort -h |xargs sha256sum > ./tmpDir/all_modules_and_patches.sha256sums
+
 find ./Makefile ./modules/coreboot ./modules/musl-cross* ./patches/coreboot* -type f | sort -h | xargs sha256sum > ./tmpDir/coreboot_musl-cross.sha256sums
+
 find ./Makefile modules/musl-cross* -type f | sort -h | xargs sha256sum > ./tmpDir/musl-cross.sha256sums
+
 ./blobs/xx20/download_parse_me.sh
+
 ./blobs/xx30/download_clean_me.sh -m $(readlink -f ./blobs/xx30/me_cleaner.py)
-./blobs/xx30/vbios_t530.sh
-./blobs/xx30/vbios_w530.sh
+
+# This final step builds out the ROMs. If you get errors, try rerunning the command a few times.
 rm -rf build/x86/x230-hotp-maximized/* build/x86/log/* && make V=1 BOARD=x230-hotp-maximized  || touch ./tmpDir/failed_build
 ```
+Now that the firmware has compiled, we should see the firmware files and
+their hashes in the output. We need to copy the top and bottom roms
+to our host machine. While in the docker container, run the following
+commands: 
+# TODO: Finish this piece
 
 
-
-## Downloading the firmware
+## Download Pre-Compiled Firmware
 
 Original steps found here: https://osresearch.net/Downloading
-
-They recommend not downloading from the latest commit, so let's head to the commits section of their github repo at https://github.com/osresearch/heads/commits/master - It's fairly safe to aim for a commit that was two weeks prior to today's date. Make sure the commit was "Verified" and that the Github Checkrun's passed(look for the green check mark, not the red X)
-![commits](assets/images/commits.png)
 
 Find the commit you want to use, then click on the green checkmark, and on the little pop up window, scroll and find "x230-hotp-maximized". Click on "Details". This will pull you into circleCI
 
@@ -183,25 +193,25 @@ after installing os, if you get errors or anything after heads boots, just pick 
    3.  Type in your desired comment(recommended would be "Security Key")
 11. You'll then be asked if want to export the public key to a USB drive. Type "Y" for yes and hit enter.
 12. Then select the usb drive you want the public key to be saved to
-13. Now Heads will set up your NitroKey to work with Heads. This can take 5 - 10 minutes. Be patient and don't touch anything until it's completed
-This is mostly important if you want TOTP to be reliable.
-1.  You may get an error stating "Unable to create TPM counter". Just hit OK.
-2.  You will probably then be brought to a page titled "ERROR: TOTP Generation Failed". Unplug your Nitrokey and reinsert it. 
-3.  Now click "Generate new HOTP/TOTP secret"
-4.  You may get a warning that any old secrets will be erased. Click OK and hit enter.
-5.  You'll then be presented with a QR code. Scan it with your phone and hit enter
-6.  Type your admin gpg key passcode and hit enter
-7.  Now you'll be back to the Heads Home Menu. Go to Options, then "Update checksums and sign all files in /boot", click on it. The next screen click Yes. On the next screen, type "Y" to confirm your have your GPG Card(aka NitroKey) inserted.
-8.  Then type in your TPM Owner password.
-9.  If asked, enter your GPG User Pin and hit enter
-10. If the signing fails, wait until you're back to the home screen, then pull out and reinsert your NitroKey and redo the steps for "Update checksums and sign all files in /boot".
-13. You should be back on the Heads home menu. Click "Default Boot"
-14. IF you get a "No Default Boot Option Configured" page, click yes.
-15. Now choose the OS you want to boot. If asked, to Confirm boot details, select "Make Default" and hit enter
-16. If asked if you would like to add a disk encryption to the TPM, select "N" for No. I haven't had luck figuring out this feature.
-17. When asked if your GPG card is inserted, type "Y" for yes and hit enter
-18. Type in your GPG user pin and hit enter
-19. Your system should now boot into the OS you chose.
+13. Now Heads will set up your NitroKey to work with Heads. This can take 5 - 10 minutes. Be patient and don't 
+touch anything until it's completed
+14.  You may get an error stating "Unable to create TPM counter". Just hit OK.
+15.  You will probably then be brought to a page titled "ERROR: TOTP Generation Failed". Unplug your Nitrokey and reinsert it. 
+16.  Now click "Generate new HOTP/TOTP secret"
+17.  You may get a warning that any old secrets will be erased. Click OK and hit enter.
+18.  You'll then be presented with a QR code. Scan it with your phone and hit enter
+19.  Type your admin gpg key passcode and hit enter
+20.  Now you'll be back to the Heads Home Menu. Go to Options, then "Update checksums and sign all files in /boot", click on it. The next screen click Yes. On the next screen, type "Y" to confirm your have your GPG Card(aka NitroKey) inserted.
+21.  If asked, type in your TPM Owner password.
+22.  If asked, enter your GPG User Pin and hit enter
+23. If the signing fails, wait until you're back to the home screen, then pull out and reinsert your NitroKey and redo the steps for "Update checksums and sign all files in /boot".
+24. You should be back on the Heads home menu. Click "Default Boot"
+25. IF you get a "No Default Boot Option Configured" page, click yes.
+26. Now choose the OS you want to boot. If asked, to Confirm boot details, select "Make Default" and hit enter
+27. If asked if you would like to add a disk encryption to the TPM, select "N" for No. I haven't had luck figuring out this feature.
+28. When asked if your GPG card is inserted, type "Y" for yes and hit enter
+29. Type in your GPG user pin and hit enter
+30. Your system should now boot into the OS you chose.
 
 Make sure the reboot the system one more time to ensure the Nitrokey works fine. If you get an error with the system Unable to unseal the TOTP or TOTP Generation Failed, rerun the "Generate new TOTP/HOTP secret"
 
@@ -249,24 +259,23 @@ drive with iso, should include iso, iso signing key, and qubes master signing ke
 22. You'll then be asked if want to export the public key to a USB drive. Type "Y" for yes and hit enter.
 23. Then select the usb drive you want the public key to be saved to
 24. Now Heads will set up your NitroKey to work with Heads. This can take 5 - 10 minutes. Be patient and don't touch anything until it's completed
-This is mostly important if you want TOTP to be reliable.
-1.  You may get an error stating "Unable to create TPM counter". Just hit OK.
-2.  You "may" then be brought to a page titled "ERROR: TOTP Generation Failed". Regardless, unplug your Nitrokey and reinsert it. If you're on the Heads Boot Menu, got to "Options -->", then go to "TPM/TOTP/HOTP Options -->"
-3.  Now click "Generate new HOTP/TOTP secret"
-4.  You may get a warning that any old secrets will be erased. Click OK and hit enter.
-5.  You'll then be presented with a QR code. Scan it with your phone and hit enter
-6.  Type your admin gpg key passcode and hit enter
-7.  Now you'll be back to the Heads Home Menu. Go to Options, then "Update checksums and sign all files in /boot", click on it. The next screen click Yes. On the next screen, type "Y" to confirm your have your GPG Card(aka NitroKey) inserted.
-8.  Then type in your TPM Owner password.
-9.  If asked, enter your GPG User Pin and hit enter
-10. If the signing fails, wait until you're back to the home screen, then pull out and reinsert your NitroKey and redo the steps for "Update checksums and sign all files in /boot".
-11. You should be back on the Heads home menu. Click "Default Boot"
-12. IF you get a "No Default Boot Option Configured" page, click yes.
-13. Now choose the OS you want to boot. If asked, to Confirm boot details, select "Make Default" and hit enter
-14. If asked if you would like to add a disk encryption to the TPM, select "N" for No. I haven't had luck figuring out this feature.
-15. When asked if your GPG card is inserted, type "Y" for yes and hit enter
-16. Type in your GPG user pin and hit enter
-17. Your system should now boot into the OS you chose.
+25. You may get an error stating "Unable to create TPM counter". Just hit OK.
+26. You "may" then be brought to a page titled "ERROR: TOTP Generation Failed". Regardless, unplug your Nitrokey and reinsert it. If you're on the Heads Boot Menu, got to "Options -->", then go to "TPM/TOTP/HOTP Options -->"
+27. Now click "Generate new HOTP/TOTP secret"
+28. You may get a warning that any old secrets will be erased. Click OK and hit enter.
+29. You'll then be presented with a QR code. Scan it with your phone and hit enter
+30. Type your admin gpg key passcode and hit enter
+31. Now you'll be back to the Heads Home Menu. Go to Options, then "Update checksums and sign all files in /boot", click on it. The next screen click Yes. On the next screen, type "Y" to confirm your have your GPG Card(aka NitroKey) inserted.
+32. Then type in your TPM Owner password.
+33. If asked, enter your GPG User Pin and hit enter
+34. If the signing fails, wait until you're back to the home screen, then pull out and reinsert your NitroKey and redo the steps for "Update checksums and sign all files in /boot".
+35. You should be back on the Heads home menu. Click "Default Boot"
+36. IF you get a "No Default Boot Option Configured" page, click yes.
+37. Now choose the OS you want to boot. If asked, to Confirm boot details, select "Make Default" and hit enter
+38. If asked if you would like to add a disk encryption to the TPM, select "N" for No. I haven't had luck figuring out this feature.
+39. When asked if your GPG card is inserted, type "Y" for yes and hit enter
+40. Type in your GPG user pin and hit enter
+41. Your system should now boot into the OS you chose.
 
 Make sure the reboot the system one more time to ensure the Nitrokey works fine. If you get an error with the system Unable to unseal the TOTP or TOTP Generation Failed, rerun the "Generate new TOTP/HOTP secret"
 
@@ -283,4 +292,13 @@ Set up GPG key on Nitrokey https://docs.nitrokey.com/storage/linux/gpa
  copy public gpg key to seperate fat32 formatted usb stick 
 Example filename: s1nack-nitrokey-032423.asc
 --
+
+https://www.rototron.info/recover-bricked-bios-using-flashrom-on-a-raspberry-pi/
+
+https://libreboot.org/docs/install/spi.html#reading
+
+Download the top and bottom rom files from this commit https://app.circleci.com/pipelines/github/osresearch/heads/524/workflows/d13d6a02-1ffa-40ac-b721-e31ff69483d4/jobs/7458
+
+grab the sha-sums from the Make Board check and compare them with what was downloaded
+
 
