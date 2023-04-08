@@ -45,10 +45,38 @@ find ./Makefile modules/musl-cross* -type f | sort -h | xargs sha256sum > ./tmpD
 rm -rf build/x86/x230-hotp-maximized/* build/x86/log/* && make V=1 BOARD=x230-hotp-maximized  || touch ./tmpDir/failed_build
 ```
 Now that the firmware has compiled, we should see the firmware files and
-their hashes in the output. We need to copy the top and bottom roms
+their hashes in the output. 
+
+Example:
+```
+6e433049eb1d6b71aa01aa58b89ab25d49fa69379463a6c356fe2b5337bcc2ad  build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158.rom
+2023-04-08 16:02:32+00:00 DD 8MB build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-bottom.rom
+dd of=/heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-bottom.rom if=/heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158.rom bs=65536 count=128 skip=0 status=none
+16b8194e01662d8658c621ed05631aa94814a4107e5dc5285350274a04d2e6f3  /heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-bottom.rom
+2023-04-08 16:02:32+00:00 DD 4MB build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-top.rom
+dd of=/heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-top.rom if=/heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158.rom bs=65536 count=64 skip=128 status=none
+0c812ab2ce23c5ff7502d5ca2e6b7bc2f38819ec739d4bdd59188f563d150fe4  /heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-top.rom
+6e433049eb1d6b71aa01aa58b89ab25d49fa69379463a6c356fe2b5337bcc2ad  /heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158.rom
+```
+
+We need to copy the files that end in *-top.rom and *-bottom.rom
 to our host machine. While in the docker container, run the following
 commands: 
-# TODO: Finish this piece
+
+1. On your machine(the docker host), which keeping the docker container running, open a new terminal window.
+2. `cd` into the directory you want your roms saved to
+3. Run `docker ps` and copy the Container ID for the container we launched
+4. Then run:
+```bash
+# Note that the period at the end notes that we want the files copy to our current directory
+docker cp <CONTAINER ID>:<ROM PATH> .
+
+Example:
+# docker cp faf35cbdc550:/heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-bottom.rom .
+# docker cp faf35cbdc550:/heads/build/x86/x230-hotp-maximized/heads-x230-hotp-maximized-v0.2.0-1507-g1cf7158-top.rom .
+```
+
+You can now jump to [Flashing via programmer](#flashing-via-programmer)
 
 
 ## Download Pre-Compiled Firmware
