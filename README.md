@@ -1,3 +1,26 @@
+# Heads Firmware Install Guide
+
+If you're reading this, you may have a interest in security and privacy. There are currently only a few actual solutions 
+to purchase a system that has Heads installed, a [NitroPad](https://www.nitrokey.com/news/2020/nitropad-secure-laptop-unique-tamper-detection) and a [Purism Librem 14](https://puri.sm/products/librem-14/)(and their other models). This guide will show you how to flash Heads onto a Lenovo Thinkpad X230 laptop. The reason I created this guide is to give to you(and myself), an easy to follow guide to build your own secure laptop. This is a living document and is open to Pull Requests.
+
+To quickly summarize, Heads, likes it's brethren Coreboot, is a open source firmware that allows you to replace your 
+BIOS with a secure alternative. Heads allows you to verify if your system has been tampered(aka EvilMaid), 
+using a combination of the TPM, Heads Firmware, and NitroKey to verify integrity. 
+
+## What is Heads
+
+Explained elegantly(from the official Heads docs), "Heads is not just another Linux distribution - it combines physical hardening of specific hardware platforms and flash security features with custom coreboot firmware and a Linux boot loader in ROM. This moves the root of trust into the write-protected region of the SPI flash and prevents further software modifications to the bootup code (and on platforms that support it, Bootguard can protect against many hardware attacks as well). Controlling the first instruction the CPU executes allows Heads to measure every step of the boot firmware and configuration into the TPM, which makes it possible to attest to the user or a remote system that the machine has not been tampered with. While modern Intel CPUs require binary blobs to boot, these non-Free components are included in the measurements and are at least guaranteed to be unchanging. Once the system is in a known good state, the TPM is used as a hardware key storage to decrypt the drive.
+
+Additionally, the hypervisor, kernel and initrd images are signed by keys controlled by the user. While all of these firmware and software changes don’t secure the system against every possible attack vector, they address several classes of attacks against the boot process and physical hardware that have been neglected in traditional installations, hopefully raising the difficulty beyond what most attackers are willing to spend."
+
+More information can be found at https://osresearch.net/
+
+## What do you need?
+
+- [ ] Lenovo Thinkpad X230(The regular model, not the swivel touch screen version). Check [Amazon](https://www.amazon.com/Lenovo-ThinkPad-X230-NoteBook-Professional/dp/B01J28OLBE/ref=sr_1_3?keywords=lenovo+thinkpad+x230) and [Ebay](https://www.ebay.com/sch/i.html?_nkw=lenovo+thinkpad+x230&_sacat=0)
+- [ ] [Nitrokey Storage 2](https://www.nitrokey.com/#comparison) or [Nitrokey Pro 2](https://www.nitrokey.com/#comparison)
+- [ ] [CH341A Programmer kit](https://www.amazon.com/KeeYees-SOIC8-EEPROM-CH341A-Programmer/dp/B07SHSL9X9/ref=sr_1_4?keywords=CH341A)
+- [ ] Optional - [Pomona SOIC8 Clip](https://www.amazon.com/CPT-063-Test-Clip-SOIC8-Pomona/dp/B00HHH65T4) Recommended alternativa to the cheap clip that comes with the programmer
 
 ## Obtaining the Firmware
 
@@ -110,27 +133,6 @@ $ echo "83627cef6f6576167901b8b560c7f9d8e3c36392e96e401af382f0e8e01bdca6 ~/Docum
 ```
 
 You're now ready to start flashing them
-
-
-## Flashing via Raspberry Pi
-
-Connect to the top chip and run `sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000` and see if it detects the chip. You may get a list of possible chips, pick the one from the chart found here: https://osresearch.net/x230-maximized-flashing/
-
-We're going to want to read the top one and then verified what was read is correct via
-`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -r top.bin -c MX25L3206E/MX25L3208E`
-and then
-`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -v top.bin -c MX25L3206E/MX25L3208E`
-
-Now we're going to write the new rom to the top chip via `sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -c MX25L3206E/MX25L3208E -w heads-x230-hotp-maximized-v0.2.0-1400-g3ac896b-top.rom`
-
-Now lets move onto the bottom chip
-
-We're going to want to read the bottom one and then verified what was read is correct via
-`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -r top.bin -c MX25L6406E/MX25L6408E`
-and then
-`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -v top.bin -c MX25L6406E/MX25L6408E`
-Now we're going to write the new rom to the bottom chip via
-`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -c MX25L6406E/MX25L6408E -w heads-x230-hotp-maximized-v0.2.0-1400-g3ac896b-bottom.rom`
 
 
 ## Flashing via programmer
@@ -309,6 +311,25 @@ Make sure the reboot the system one more time to ensure the Nitrokey works fine.
 
 When the system boots up, the nitrokey should blink green and the HOTP status should be "Success" on the Heads Boot Menu. If you don't have your NitroKey with you, you can verify boot integrity with your smart phone to compare the TOTP code. This relies on the time being accurate.
 
+## Flashing via Raspberry Pi(section needs work)
+
+Connect to the top chip and run `sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000` and see if it detects the chip. You may get a list of possible chips, pick the one from the chart found here: https://osresearch.net/x230-maximized-flashing/
+
+We're going to want to read the top one and then verified what was read is correct via
+`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -r top.bin -c MX25L3206E/MX25L3208E`
+and then
+`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -v top.bin -c MX25L3206E/MX25L3208E`
+
+Now we're going to write the new rom to the top chip via `sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -c MX25L3206E/MX25L3208E -w heads-x230-hotp-maximized-v0.2.0-1400-g3ac896b-top.rom`
+
+Now lets move onto the bottom chip
+
+We're going to want to read the bottom one and then verified what was read is correct via
+`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -r top.bin -c MX25L6406E/MX25L6408E`
+and then
+`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -v top.bin -c MX25L6406E/MX25L6408E`
+Now we're going to write the new rom to the bottom chip via
+`sudo flashrom -p linux_spi:dev=/dev/spidev0.0,spispeed=2000 -c MX25L6406E/MX25L6408E -w heads-x230-hotp-maximized-v0.2.0-1400-g3ac896b-bottom.rom`
 
 ---
 
